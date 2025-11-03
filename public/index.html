@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>IG Session Generator</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="bg-overlay"></div>
+  <main class="card">
+    <h1>Instagram Session Generator</h1>
+    <p>Enter Instagram credentials and click <strong>Login & Generate</strong>.</p>
+
+    <label class="field">
+      <span>Username</span>
+      <input id="username" placeholder="instagram_username" />
+    </label>
+
+    <label class="field">
+      <span>Password</span>
+      <input id="password" type="password" placeholder="password" />
+    </label>
+
+    <div class="actions">
+      <button id="generateBtn">Login & Generate</button>
+      <a id="downloadLink" class="download hidden">Download session.json</a>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <footer class="note">
+      <small>
+        Tip: You can also set IG_USER and IG_PASS env vars on Render and skip entering credentials here.
+      </small>
+    </footer>
+  </main>
+
+  <script>
+    const generateBtn = document.getElementById('generateBtn');
+    const status = document.getElementById('status');
+    const downloadLink = document.getElementById('downloadLink');
+
+    function setStatus(msg, isError = false) {
+      status.textContent = msg;
+      status.className = isError ? 'status error' : 'status success';
+    }
+
+    generateBtn.onclick = async () => {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      setStatus('🔑 Logging in...');
+
+      try {
+        const resp = await fetch('/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.message || 'Failed');
+
+        setStatus(data.message);
+        const fname = encodeURIComponent(data.filename);
+        const url = `/download?file=${fname}`;
+        downloadLink.href = url;
+        downloadLink.classList.remove('hidden');
+
+        // auto-click to start download (optional)
+        // window.location = url;
+      } catch (err) {
+        setStatus('❌ ' + (err.message || 'Error'), true);
+        downloadLink.classList.add('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
